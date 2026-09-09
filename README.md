@@ -188,17 +188,20 @@ Python code is client and File system is server in this case
 
 
 # Checkpoint 8 — Evals
-Done
+Created Dataset.py where expected test case written
+Created scripts/evals to call analyze api
+Created check_case() and run_evals()
+Call and verify
 
 
 
 
 # PENDING
-- Push the code
-- Review my code and then mistakes will fix with claude help
+1. Push the code - Both Github and Bitbucket: https://bitbucket.org/jimmytrivedi/workspace/projects/JC
+2. Review my code and then mistakes will fix with claude help
+- Deploy the BE
 - streaming
 - Folder architecture
-- Deploy the BE
 - Swap MCP with Google Drive MCP
 - Add LLM-as-judge to your eval suite 
 - Add a new tool that Claude actually decides whether to call (not just how)
