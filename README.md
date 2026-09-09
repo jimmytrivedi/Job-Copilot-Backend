@@ -196,26 +196,4 @@ Call and verify
 
 
 
-# PENDING
-1. Push the code - Both Github and Bitbucket: https://bitbucket.org/jimmytrivedi/workspace/projects/JC
-2. Review my code and then mistakes will fix with claude help
-- Deploy the BE
-- streaming
-- Folder architecture
-- Swap MCP with Google Drive MCP
-- Add LLM-as-judge to your eval suite 
-- Add a new tool that Claude actually decides whether to call (not just how)
-- Write the portfolio README from scratch
-
-- Update below:
-1. In Linkedin project section - Add this project and provide GitHub link (from github/com/jimmytrivedi/JobSearch)
-2. In resume Add this line: Basic Understanding of LLM. Also Created basic AI - Job Search project with use of prompt engineering, RAG, MCP, 
-3. Add similar AI related things in LinkedIn About section as well.
-
-- Solve one question in Python language on Leetcode
-
-
-
-
-
 
