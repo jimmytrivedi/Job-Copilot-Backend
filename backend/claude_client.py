@@ -10,6 +10,8 @@ from backend.qdrant_client_db import query_chunks
 from backend.tools import search_resume, extract_requirements, run_extract_requirements
 from dotenv import load_dotenv
 
+# Test git
+
 load_dotenv() # Reads the .env file and loads its variable into os.environ
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
