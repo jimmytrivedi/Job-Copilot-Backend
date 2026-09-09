@@ -1,0 +1,16 @@
+name: Job-Copilot-Backend
+id: ari:cloud:compass:e0855f33-60c6-435f-81a9-da64c34a26ba:component/f3bc85a1-f26c-463a-89ab-de252edd0ccf/79af1245-d40b-430b-a873-3079d89286bb
+description: A BE project
+configVersion: 1
+typeId: SERVICE
+fields:
+  tier: 4
+links:
+  - name: null
+    type: REPOSITORY
+    url: https://github.com/jimmytrivedi/Job-Copilot-Backend
+relationships:
+  DEPENDS_ON: []
+labels:
+  - source:github
+customFields: null
