@@ -195,24 +195,40 @@ Call and verify
 
 
 
-
-# PENDING
+# Checkpoint 9 — Finishing touch
 1. Push the code - Both Github and Bitbucket: https://bitbucket.org/jimmytrivedi/workspace/projects/JC
 2. Review my code and then mistakes will fix with claude help
-- Deploy the BE
-- streaming
-- Folder architecture
-- Swap MCP with Google Drive MCP
-- Add LLM-as-judge to your eval suite 
-- Add a new tool that Claude actually decides whether to call (not just how)
-- Write the portfolio README from scratch
+3. Deploy the BE 
+4. Folder architecture
 
-- Update below:
-1. In Linkedin project section - Add this project and provide GitHub link (from github/com/jimmytrivedi/JobSearch)
-2. In resume Add this line: Basic Understanding of LLM. Also Created basic AI - Job Search project with use of prompt engineering, RAG, MCP, 
-3. Add similar AI related things in LinkedIn About section as well.
 
-- Solve one question in Python language on Leetcode
+
+# Checkpoint 10 — LLM as judge
+Case → analyze_with_claude(jd) → response
+                                    ↓
+                            judge_with_claude(jd, response) → {"verdict": "PASS", "reason": "..."}
+
+So now we ask again calude to analyze response that's the difference.
+
+In Check Point 8, we were evaluating via our own expected I/O through Python code, now in Check Point 10, we make claude API call to check it.
+
+
+
+# Checkpoint 11 — API Auth
+Right now api.jimmytrivedi.in/analyze is open to the world. Add API-key middleware (~20 lines). Anyone can hammer your Anthropic credits otherwise.
+
+
+
+
+# Checkpoint 100 — Enhancement
+- Agent orchestration
+- Agent evaluation and instrumentation
+- Agentic RAG
+- RAG evaluation
+- Tool evaluation
+- Prompt caching — Anthropic feature that cuts token costs 90% for repeated system prompts. Small code change, big cost/latency win. Shows production awareness.
+- Reranking after retrieval — after Voyage returns top-5 chunks, rerank them with Voyage's reranker or Cohere. Improves RAG quality. Portfolio bullet: "used reranker to improve retrieval precision."
+- A second tool Claude decides whether to call — REBUILD's suggestion. E.g., search_web(query) for JDs mentioning niche tech. Shows genuine agentic behavior (not just forced tool sequences)
 
 
 

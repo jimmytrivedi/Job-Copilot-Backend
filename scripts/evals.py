@@ -1,7 +1,17 @@
 from backend.claude_client import analyze_with_claude
-from backend.dataset import CASES
+from scripts.dataset import CASES
+from backend.judge import judge_response
 
-def check_case(case: dict) -> tuple[bool, str]:
+def llm_as_judge_check_case(case: dict) -> tuple[bool, str]:
+    # We got the response from claude
+    result = analyze_with_claude(f"JD: {case['jd']}")
+    verdict = judge_response(case['jd'], result)
+    passed = verdict['verdict'] == "PASS"
+    return passed, verdict['reasoning']
+
+
+# Deprecated due to enhacement of project, now we use llm_as_judge_check_case()
+def eval_check_case(case: dict) -> tuple[bool, str]:
     # We got the response from claude
     result = analyze_with_claude(f"JD: {case['jd']}")
 
@@ -31,7 +41,8 @@ def check_case(case: dict) -> tuple[bool, str]:
 def run_evals():
     passed = 0
     for case in CASES:
-        ok, msg = check_case(case)
+        # ok, msg = eval_check_case(case)
+        ok, msg = llm_as_judge_check_case(case)
         status = "PASS" if ok else "FAIL"
         print(f"[{status}] {case['name']:30s} | {msg}")
         if ok:
