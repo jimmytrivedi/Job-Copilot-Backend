@@ -216,6 +216,7 @@ In Check Point 8, we were evaluating via our own expected I/O through Python cod
 
 # Checkpoint 11 — API Auth
 Right now api.jimmytrivedi.in/analyze is open to the world. Add API-key middleware (~20 lines). Anyone can hammer your Anthropic credits otherwise.
+Check
 
 
 
