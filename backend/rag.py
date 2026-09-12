@@ -1,5 +1,5 @@
 from qdrant_client import QdrantClient
-from backend.voyage_client import get_embeddings_by_chunks, embed_query
+from backend.voyage_client import get_embeddings_by_chunks, embed_query, rerank
 from qdrant_client.models import PointStruct, Document
 import os
 
@@ -23,17 +23,16 @@ def insert_vectors(client: QdrantClient):
         points=points
     )
 
-def retrieve_closest_chunks(client: QdrantClient, query: str):
+def retrieve_closest_chunks(client: QdrantClient, query: str, top_k: int = 5):
     query_vector = embed_query(query)
     results = client.query_points(
         collection_name="test_collection",
         query=query_vector,
         with_payload=True,
-        limit=5
+        limit=20
     )
 
-    total  = ""
-    for point in results.points:
-        total += point.payload.get("text", "") + "\n\n"
+    candidate = [p.payload.get("text", "") for p in results.points]
+    top_chunks = rerank(query, candidate, top_k=top_k)
 
-    return total
+    return "\n\n".join(top_chunks)

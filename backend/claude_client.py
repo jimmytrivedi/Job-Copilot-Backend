@@ -7,7 +7,7 @@ import json, re
 from backend.models import Assessment, AnalyzeRequest
 from backend.prompts import SYSTEM_PROMPT
 from backend.qdrant_client_db import query_chunks
-from backend.tools import search_resume, extract_requirements, run_extract_requirements
+from backend.tools import search_resume, extract_requirements, run_extract_requirements, search_web, run_search_web
 from dotenv import load_dotenv
 
 # Test git
@@ -23,8 +23,14 @@ def analyze_with_claude(prompt: str) -> Assessment:
            response = client.messages.create(
                model="claude-sonnet-4-6",  # List of Model ID: https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions
                max_tokens=1024,
-               tools=[search_resume(), extract_requirements()],
-               system=SYSTEM_PROMPT,
+               tools=[search_resume(), extract_requirements(), search_web()],
+               system=[
+                   {
+                       "type": "text",
+                       "text": SYSTEM_PROMPT,
+                       "cache_control": {"type": "ephemeral"}
+                   }
+               ],
                messages=messages,
            )
 
@@ -32,12 +38,11 @@ def analyze_with_claude(prompt: str) -> Assessment:
            if response.stop_reason != "tool_use":
                break
 
-
            # Handle tool use
            tool_results = []
            for block in response.content:
                if block.type == "tool_use":
-                   print(f"Tool called: {block.name} | input: {block.input}")
+                   print(f"Tool called: {block.name} | input: {block.input}\n")
                    result = run_tool(block.name, block.input) #Dispatcher
                    tool_results.append(
                        {
@@ -74,7 +79,10 @@ def analyze_with_claude(prompt: str) -> Assessment:
 
 def run_tool(name, tool_input):
     if name == "search_resume":
-        return query_chunks(tool_input["query"])
+        return query_chunks(tool_input["query"], tool_input.get("top_k", 5))
     if name == "extract_requirements":
         return json.dumps(run_extract_requirements(tool_input["jd"]))
+    if name == "search_web":
+        return run_search_web(tool_input["query"])
+
     return {"error": f"Unknown tool: {name}"}

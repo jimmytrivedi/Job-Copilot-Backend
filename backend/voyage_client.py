@@ -1,3 +1,5 @@
+from unittest import result
+
 import voyageai
 import os
 from dotenv import load_dotenv
@@ -37,3 +39,12 @@ def embed_query(text: str) -> list[float]:
             if attempt == 2:
                 raise
             time.sleep(65)
+
+def rerank(query: str, documents: list[str], top_k: int = 5) -> list[str]:
+    result = client.rerank(
+        query=query,
+        documents=documents,
+        model="rerank-2.5",
+        top_k=top_k
+    )
+    return [r.document for r in result.results]

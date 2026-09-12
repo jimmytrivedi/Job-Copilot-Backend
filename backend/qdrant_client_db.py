@@ -23,8 +23,8 @@ def init_dqrant():
         insert_vectors(client)
 
 # Retrieve vectors into a collection
-def query_chunks(query: str) :
-    return retrieve_closest_chunks(client, query)
+def query_chunks(query: str, top_k: int = 5) :
+    return retrieve_closest_chunks(client, query, top_k)
 
 
 

@@ -216,20 +216,81 @@ In Check Point 8, we were evaluating via our own expected I/O through Python cod
 
 # Checkpoint 11 — API Auth
 Right now api.jimmytrivedi.in/analyze is open to the world. Add API-key middleware (~20 lines). Anyone can hammer your Anthropic credits otherwise.
-Check
+Added depends on header as API_KEY
 
 
 
+# Checkpoint 12 — Prompt Caching
+Implemented in claude_client
+system=[
+                   {
+                       "type": "text",
+                       "text": SYSTEM_PROMPT,
+                       "cache_control": {"type": "ephemeral"}
+                   }
+               ]
+Prompt caching is working fine.
 
-# Checkpoint 100 — Enhancement
-- Agent orchestration
-- Agent evaluation and instrumentation
-- Agentic RAG
-- RAG evaluation
-- Tool evaluation
-- Prompt caching — Anthropic feature that cuts token costs 90% for repeated system prompts. Small code change, big cost/latency win. Shows production awareness.
-- Reranking after retrieval — after Voyage returns top-5 chunks, rerank them with Voyage's reranker or Cohere. Improves RAG quality. Portfolio bullet: "used reranker to improve retrieval precision."
-- A second tool Claude decides whether to call — REBUILD's suggestion. E.g., search_web(query) for JDs mentioning niche tech. Shows genuine agentic behavior (not just forced tool sequences)
+
+
+# Checkpoint 13 — Reranking
+Why: Qdrant returns chunks by raw cosine similarity, which rewards surface similarity, not true relevance.
+Fix: fetch a wider candidate pool, then let Voyage's reranker re-score and keep the best few.
+
+Flow:
+so we used to fetch top_k=5 chunks, now we're fetching 20 chunks, then we use voyage client.rerank function which will
+return top 5 chunks and the flows continue.
+
+
+
+# Checkpoint 14 — Second tool (search_web)
+Give Claude an OPTIONAL search_web(query) tool. Unlike search_resume/extract_requirements
+(always called), Claude calls this ONLY when a JD mentions unfamiliar tech it needs to look up
+before judging fit. If everything in the JD is familiar, it skips the tool — and that choice
+is the point: real agentic decision-making (when NOT to call), not a forced tool sequence.
+
+Steps:
+1. Create new tool called search_web() with it's scheme
+2. Now here we're not using Anthropic's default web_searc tool instead we're going with 3rd party call Tavily
+3. Created Tavily account, and installed uv add tavily-python
+4. We gave different prompt and tool got called, it's working now.
+
+
+
+# Checkpoint 15 — Structured outputs (Pydantic + retries)
+Replace your regex JSON-scraping in claude_client.py with schema-validated parsing + auto-retry on bad JSON.
+
+
+---------------------------------------------------------P E N D I N G--------------------------------------------------
+# Checkpoint 16 — Streaming to client
+Stream the assessment token-by-token to Android via SSE instead of waiting for the full response. Snappier UX.
+
+# Checkpoint 17 — Agent evaluation + instrumentation
+Log each loop iteration (tools called, tokens, latency) so you can measure and debug the agent, not just its final answer.
+
+# Checkpoint 18 — Tool evaluation
+Check Claude called the right tool with right args (e.g. did it call extract_requirements first?). Measures tool-use quality.
+
+# Checkpoint 19 — RAG evaluation
+Measure retrieval itself: were the returned resume chunks actually relevant/grounded? Separate from final-answer eval.
+
+# Checkpoint 20 — Observability (LangSmith/OTel)
+Trace every request end-to-end on a dashboard with cost/latency. Turns your prints into real monitoring.
+
+# Checkpoint 21 — Agentic RAG
+Let Claude retrieve, reason, then retrieve again with a refined query. You partly do this via multiple search_resume calls already.
+
+# Checkpoint 22 — LangGraph
+Rebuild your agent loop as a state graph with checkpointing + human-in-the-loop pauses. Replaces your hand-rolled for loop in analyze_with_claude.
+
+# Checkpoint 23 — Agent orchestration / Multi-agent
+Split into specialist agents (requirement-extractor, matcher, bullet-writer) coordinated by a supervisor. Cleaner than one mega-prompt.
+
+# Checkpoint 24 — Agent security
+Guard against JD text injecting instructions, validate tool args, least-privilege on your MCP file writes. Your /analyze takes untrusted input.
+
+# Checkpoint 25 — Cloud deploy + CI
+GitHub Actions runs your evals on every push, blocks merge if pass-rate drops, auto-deploys to Railway/Bedrock.
 
 
 

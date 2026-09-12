@@ -3,7 +3,7 @@ SEARCH_RESUME_SCHEMA = {
     "properties": {
         "query": {
             "type": "string",
-            "description": "Search query to find relavant resume chunks"
+            "description": "Search query to find relevant resume chunks"
         },
         "top_k": {
             "type": "integer",
@@ -32,4 +32,15 @@ EXTRACT_REQUIREMENTS_SCHEMA = {
         }
     },
     "required": ["jd"]
+}
+
+SEARCH_WEB_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "query": {
+            "type": "string",
+            "description": "Search query to find relevant meaning"
+        }
+    },
+    "required": ["query"]
 }

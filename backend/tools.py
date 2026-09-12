@@ -1,7 +1,8 @@
-from backend.schemas import SEARCH_RESUME_SCHEMA, EXTRACT_REQUIREMENTS_SCHEMA
+from backend.schemas import SEARCH_RESUME_SCHEMA, EXTRACT_REQUIREMENTS_SCHEMA, SEARCH_WEB_SCHEMA
 import json
 import os
 from anthropic import Anthropic
+from backend.tavily_client import get_web_search_result
 
 _client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
@@ -64,3 +65,17 @@ JD:
     )
     text = response.content[0].text
     return json.loads(text)
+
+def search_web():
+    return {
+        "name": "search_web",
+        "description": "Only use this tool, ff any tech is unfamilier",
+        "input_schema": SEARCH_WEB_SCHEMA,
+        "input_examples": [
+            {"query": "meaning of <keyword>"},
+            {"query": "meaning of <keyword>"}
+        ]
+    }
+
+def run_search_web(query: str) -> dict:
+    return get_web_search_result(query)
