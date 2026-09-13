@@ -257,23 +257,44 @@ Steps:
 
 
 
-# Checkpoint 15 — Structured outputs (Pydantic + retries)
-Replace your regex JSON-scraping in claude_client.py with schema-validated parsing + auto-retry on bad JSON.
+# Checkpoint 15 — Structured outputs
+Why: regex + json.loads could return wrong/incomplete data silently (a Python return hint and a prompt example don't enforce anything).
+Fix: use native structured outputs so the API guarantees schema-valid JSON.
+1. Switched client.messages.create -> client.messages.parse with output_format=Assessment.
+2. Dropped the regex/json parsing; return response.parsed_output (already validated).
 
 
----------------------------------------------------------P E N D I N G--------------------------------------------------
-# Checkpoint 16 — Streaming to client
-Stream the assessment token-by-token to Android via SSE instead of waiting for the full response. Snappier UX.
 
-# Checkpoint 17 — Agent evaluation + instrumentation
-Log each loop iteration (tools called, tokens, latency) so you can measure and debug the agent, not just its final answer.
+# Checkpoint 16 — Streaming (SSE)
+Why: the agent loop takes time; push progress instead of making the client wait for one big response.
+SSE format: each event is "data: {json}\n\n" over one open connection.
+1. Made analyze_with_claude a generator: yield a "tool" event per tool call, and a final "done" event with the result.
+2. New endpoint /analyze/stream returns StreamingResponse(generator, media_type="text/event-stream").
+Note: analyze_with_claude is now a generator, so the old /analyze and /log-application are disabled.
+
+
+   
+# Checkpoint 17 — Agent instrumentation
+Added a per-request trace (iterations, tools, tokens) + a total latency timer in analyze_with_claude.
+Tokens accumulate with += across loop iterations (dict resets each request).
+Win it surfaced: trace showed 7 search_resume calls -> ~101s. Capped searches to 2 in the system prompt -> ~28s (~72% faster).
+Root cause of remaining slowness: Voyage free tier = 3 RPM; each search does embed + rerank.
+
+
 
 # Checkpoint 18 — Tool evaluation
-Check Claude called the right tool with right args (e.g. did it call extract_requirements first?). Measures tool-use quality.
+Grade the agent's tool path, not just the final answer.
+eval_check_tools consumes the generator, collects "tool" events, and asserts: extract_requirements is first, search_resume <= 2.
+Reused the SSE yields as the trace source. Result: passed 3/3.
+Note: hit Voyage 3 RPM during multi-case runs; raised embed_query backoff to 25s so it self-heals instead of crashing.
+
+
 
 # Checkpoint 19 — RAG evaluation
 Measure retrieval itself: were the returned resume chunks actually relevant/grounded? Separate from final-answer eval.
 
+
+---------------------------------------------------------P E N D I N G--------------------------------------------------
 # Checkpoint 20 — Observability (LangSmith/OTel)
 Trace every request end-to-end on a dashboard with cost/latency. Turns your prints into real monitoring.
 

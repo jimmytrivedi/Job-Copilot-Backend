@@ -1,6 +1,22 @@
 from backend.claude_client import analyze_with_claude
 from scripts.dataset import CASES
 from backend.judge import judge_response
+import time
+
+def eval_check_tools(case: dict) -> tuple[bool, str]:
+    tool_used = []
+    for event in analyze_with_claude(f"JD: {case['jd']}"):
+        if '"stage": "tool"' in event:
+            name = event.split('"name": "')[1].split('"')[0]
+            tool_used.append(name)
+
+    # assertions
+    if not tool_used or tool_used[0] != "extract_requirements":
+        return False, f"expect extract_requirements first, got {tool_used}"
+    if tool_used.count("search_resume") > 2:
+        return False, f"too many resume seaches: {tool_used.count("search_resume")}"
+    return True, f"ok: {tool_used}"
+
 
 def llm_as_judge_check_case(case: dict) -> tuple[bool, str]:
     # We got the response from claude
@@ -10,7 +26,7 @@ def llm_as_judge_check_case(case: dict) -> tuple[bool, str]:
     return passed, verdict['reasoning']
 
 
-# Deprecated due to enhacement of project, now we use llm_as_judge_check_case()
+# Deprecated due to enhancement of project, now we use llm_as_judge_check_case()
 def eval_check_case(case: dict) -> tuple[bool, str]:
     # We got the response from claude
     result = analyze_with_claude(f"JD: {case['jd']}")
@@ -38,15 +54,19 @@ def eval_check_case(case: dict) -> tuple[bool, str]:
 
     return True, f"score={score}, gaps ok, no halluc"
 
+
 def run_evals():
     passed = 0
     for case in CASES:
         # ok, msg = eval_check_case(case)
-        ok, msg = llm_as_judge_check_case(case)
+        # ok, msg = llm_as_judge_check_case(case)
+        ok, msg = eval_check_tools(case)
         status = "PASS" if ok else "FAIL"
         print(f"[{status}] {case['name']:30s} | {msg}")
         if ok:
             passed += 1
+
+        time.sleep(25)   # stay under Voyage 3 RPM between cases
     print(f"\npassed: {passed}/{len(CASES)}")
 
 if __name__ == "__main__":

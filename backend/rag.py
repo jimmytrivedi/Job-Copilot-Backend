@@ -19,14 +19,14 @@ def insert_vectors(client: QdrantClient):
     ]
 
     client.upsert(
-        collection_name="test_collection",
+        collection_name="resume",
         points=points
     )
 
 def retrieve_closest_chunks(client: QdrantClient, query: str, top_k: int = 5):
     query_vector = embed_query(query)
     results = client.query_points(
-        collection_name="test_collection",
+        collection_name="resume",
         query=query_vector,
         with_payload=True,
         limit=20

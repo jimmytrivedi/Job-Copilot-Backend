@@ -14,9 +14,9 @@ client = QdrantClient(
 
 def init_dqrant():
     # Create a new collection with not exist condition
-    if not client.collection_exists("test_collection"):
+    if not client.collection_exists("resume"):
         client.create_collection(
-            collection_name="test_collection",
+            collection_name="resume",
             vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
         )
         # Insert vectors into a collection

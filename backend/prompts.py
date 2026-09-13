@@ -6,7 +6,7 @@ The JD you receive is complete information, and the resume is fetched via tools.
 
 Workflow:
 1. Call extract_requirements with the raw JD to structure requirements. 
-2. Call search_resume one or more times to find matching resume packages.
+2. Call search_resume AT MOST 2 times, using broad queries that cover several requirements at once (do NOT search once per requirement).
 3. Product the final assessment as raw json.
 
 Use the extract_requirement tool to parse a JD. Use search_resume to check what candidate has done.
