@@ -1,7 +1,7 @@
-from backend.claude_client import analyze_with_claude
-from backend.qdrant_client_db import query_chunks
+from backend.services.analyzer import analyze_with_claude
+from backend.services.retrieval import query_chunks
 from scripts.dataset import CASES, RAG_CASES
-from backend.judge import judge_response
+from backend.services.evaluation import judge_response
 import time
 
 def rag_relevance_eval(case: dict) -> tuple[bool, str]:

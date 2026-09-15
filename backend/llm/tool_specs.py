@@ -1,11 +1,49 @@
-from backend.schemas import SEARCH_RESUME_SCHEMA, EXTRACT_REQUIREMENTS_SCHEMA, SEARCH_WEB_SCHEMA
-import json
-import os
-from anthropic import Anthropic
-from backend.tavily_client import get_web_search_result
-from anthropic.types import MessageParam
+SEARCH_RESUME_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "query": {
+            "type": "string",
+            "description": "Search query to find relevant resume chunks"
+        },
+        "top_k": {
+            "type": "integer",
+            "description": "Number of chunks to retrieve"
+        }
+    },
+    "required": ["query"]
+}
 
-_client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+EXTRACT_REQUIREMENTS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "jd": {
+            "type": "string",
+            "description": "Extracted requirements from the JD"
+        },
+        "must_have": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Non-negotiable skills from the JD"
+        },
+        "nice_to_have": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Optional skills from the JD"
+        }
+    },
+    "required": ["jd"]
+}
+
+SEARCH_WEB_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "query": {
+            "type": "string",
+            "description": "Search query to find relevant meaning"
+        }
+    },
+    "required": ["query"]
+}
 
 def search_resume():
     return {
@@ -29,7 +67,7 @@ def extract_requirements():
             "Parse the raw job description into structured requirements. "
             "Call this ONCE at the start with the full JD text. "
             "Returns must_have list, nice_to_have list, and years of experience."
-         ),
+        ),
         "input_schema": EXTRACT_REQUIREMENTS_SCHEMA,
         "input_examples": [
             {
@@ -45,29 +83,6 @@ def extract_requirements():
         ]
     }
 
-def run_extract_requirements(jd: str) -> dict:
-    prompt = f"""Extract requirements from this job description. 
-Respond with raw JSON only, no prose, no backticks.
-
-Shape:
-{{
-  "must_have": [<string>, ...],
-  "nice_to_have": [<string>, ...],
-  "years": <int>
-}}
-
-JD:
-{jd}
-"""
-    messages: list[MessageParam] = [{"role": "user", "content": prompt}]
-    response = _client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=512,
-        messages=messages,
-    )
-    text = response.content[0].text
-    return json.loads(text)
-
 def search_web():
     return {
         "name": "search_web",
@@ -78,6 +93,3 @@ def search_web():
             {"query": "meaning of <keyword>"}
         ]
     }
-
-def run_search_web(query: str) -> dict:
-    return get_web_search_result(query)

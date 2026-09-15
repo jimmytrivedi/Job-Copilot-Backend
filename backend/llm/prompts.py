@@ -25,3 +25,39 @@ Example:
     "verdict": "Weak fit. Skip unless you can show ML side projects."
 }
 """
+
+JUDGE_PROMPT = """You're a strict evaluator grading an AI's job-fit assessment.
+
+Job Description:
+{jd}
+
+AI's Response:
+{response}
+
+Grade on this criteria:
+1. Did the AI correctly identify the major gaps for this JD?
+2. Is the match_score reasonable given the fit (strong-fit = 60-85, mismatch = 0-25, edge = 20-60)?
+3. Do the tailored_bullets stay grounded (no invented skills)?
+
+
+Return raw json only. No markdown, no prose.
+
+{{
+"verdict": "PASS" or "FAIL",
+"reasoning": "<one sentence explaining why>"
+}}
+"""
+
+EXTRACT_REQUIREMENTS_PROMPT = """Extract requirements from this job description. 
+Respond with raw JSON only, no prose, no backticks.
+
+Shape:
+{{
+  "must_have": [<string>, ...],
+  "nice_to_have": [<string>, ...],
+  "years": <int>
+}}
+
+JD:
+{jd}
+"""

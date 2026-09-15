@@ -1,23 +1,16 @@
-from fastapi import HTTPException
-
 import anthropic
-import os
-import json
-from backend.models import Assessment
-from backend.prompts import SYSTEM_PROMPT
-from backend.qdrant_client_db import query_chunks
-from backend.tools import search_resume, extract_requirements, run_extract_requirements, search_web, run_search_web
-from dotenv import load_dotenv
+from backend.domain.models import Assessment
+from backend.domain.errors import AgentLoopExceeded
+from backend.llm.prompts import SYSTEM_PROMPT
+from backend.llm.tool_specs import search_resume, extract_requirements, search_web
+from backend.services.tool_runner import run_tool
+from backend.config import settings
 import time
 from anthropic.types import TextBlockParam, MessageParam
-
-
-load_dotenv() # Reads the .env file and loads its variable into os.environ
-
 from langsmith import traceable
 
 
-client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
 SYSTEM_BLOCKS: list[TextBlockParam]=[
     {
@@ -33,12 +26,12 @@ def analyze_with_claude(prompt: str):
    start = time.perf_counter()
    trace = {"iteration": 0, "tools": [], "input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 0}
    try:
-       MAX_ITERATIONS = 6
+       MAX_ITERATIONS = settings.max_iterations
 
        for iteration in range(MAX_ITERATIONS):
            trace["iteration"] = iteration
            response = client.messages.parse(
-               model="claude-sonnet-4-6",  # List of Model ID: https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions
+               model=settings.chat_model,
                max_tokens=1024,
                tools=[search_resume(), extract_requirements(), search_web()],
                output_format=Assessment,
@@ -63,7 +56,7 @@ def analyze_with_claude(prompt: str):
                    trace["tools"].append(block.name)
                    print(f"Tool called: {block.name} | input: {block.input}\n")
                    result = run_tool(block.name, block.input) #Dispatcher
-                   yield f'data:{{"stage": "tool", "name": "{block.name}"}}\n\n'
+                   yield {"stage": "tool", "name": block.name}
                    tool_results.append(
                        {
                            "type": "tool_result",
@@ -75,28 +68,14 @@ def analyze_with_claude(prompt: str):
            messages.append({"role": "assistant", "content": response.content})
            messages.append({"role": "user", "content": tool_results})
        else:
-           raise HTTPException(
-               status_code=504,
-               detail=f"Agent loop exceeded {MAX_ITERATIONS} iterations"
-           )
+           raise AgentLoopExceeded()
    except anthropic.BadRequestError as e:
        print(f"Claude API error: {e}")
        raise
 
    end = time.perf_counter()
-   elpsed = end - start
-   print(f"Request time is {elpsed} seconds")
+   elapsed = end - start
+   print(f"Request time is {elapsed} seconds")
    print(f"trace {trace}")
 
-   yield f'data:{{"stage": "done", "result": {response.parsed_output.model_dump_json()}}}\n\n'
-
-@traceable()
-def run_tool(name, tool_input):
-    if name == "search_resume":
-        return query_chunks(tool_input["query"], tool_input.get("top_k", 5))
-    if name == "extract_requirements":
-        return json.dumps(run_extract_requirements(tool_input["jd"]))
-    if name == "search_web":
-        return run_search_web(tool_input["query"])
-
-    return {"error": f"Unknown tool: {name}"}
+   yield {"stage": "done", "result": response.parsed_output.model_dump()}

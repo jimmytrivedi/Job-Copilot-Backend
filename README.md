@@ -324,6 +324,16 @@ GitHub Actions runs your evals on every push, blocks merge if pass-rate drops, a
 
 
 
+- create architecture skills
+- create other require suggested skills
+
+Update README
+- Architecture - on top section of README
+- Skills - Below Architecture - Mention list of skills
+
+
+
+
 
 
 

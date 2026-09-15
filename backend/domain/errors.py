@@ -1,0 +1,3 @@
+
+class AgentLoopExceeded(Exception):
+    pass

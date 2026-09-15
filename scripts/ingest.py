@@ -1,4 +1,4 @@
-from backend.qdrant_client_db import client, init_dqrant
+from backend.services.retrieval import init_dqrant
 
 if __name__ == "__main__":
     init_dqrant()

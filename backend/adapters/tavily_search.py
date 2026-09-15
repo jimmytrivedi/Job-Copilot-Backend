@@ -1,11 +1,8 @@
 from tavily import TavilyClient
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from backend.config import settings
 
 client = TavilyClient(
-    api_key=os.environ.get("TAVILY_API_KEY")
+    api_key=settings.tavily_api_key
 )
 
 def get_web_search_result(query: str):
@@ -15,6 +12,3 @@ def get_web_search_result(query: str):
         include_answer=True
     )
     return response["answer"]
-
-if __name__ == "__main__":
-    get_web_search_result("Hello") # Test purpose
