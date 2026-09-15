@@ -21,6 +21,13 @@ SYSTEM_BLOCKS: list[TextBlockParam]=[
     }
 ]
 
+def analyze(prompt: str) -> dict:
+    result = None
+    for event in analyze_with_claude(prompt):
+        if event["stage"] == "done":
+            result = event["result"]
+    return result
+
 @traceable()
 def analyze_with_claude(prompt: str):
    messages: list[MessageParam] = [{"role": "user", "content": prompt}]

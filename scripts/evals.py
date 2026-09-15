@@ -1,4 +1,4 @@
-from backend.services.analyzer import analyze_with_claude
+from backend.services.analyzer import analyze, analyze_with_claude
 from backend.services.retrieval import query_chunks
 from scripts.dataset import CASES, RAG_CASES
 from backend.services.evaluation import judge_response
@@ -13,9 +13,8 @@ def rag_relevance_eval(case: dict) -> tuple[bool, str]:
 def eval_check_tools(case: dict) -> tuple[bool, str]:
     tool_used = []
     for event in analyze_with_claude(f"JD: {case['jd']}"):
-        if '"stage": "tool"' in event:
-            name = event.split('"name": "')[1].split('"')[0]
-            tool_used.append(name)
+        if event["stage"] == "tool":
+            tool_used.append(event["name"])
 
     # assertions
     if not tool_used or tool_used[0] != "extract_requirements":
@@ -27,7 +26,7 @@ def eval_check_tools(case: dict) -> tuple[bool, str]:
 
 def llm_as_judge_check_case(case: dict) -> tuple[bool, str]:
     # We got the response from claude
-    result = analyze_with_claude(f"JD: {case['jd']}")
+    result = analyze(f"JD: {case['jd']}")
     verdict = judge_response(case['jd'], result)
     passed = verdict['verdict'] == "PASS"
     return passed, verdict['reasoning']
@@ -36,7 +35,7 @@ def llm_as_judge_check_case(case: dict) -> tuple[bool, str]:
 # Deprecated due to enhancement of project, now we use llm_as_judge_check_case()
 def eval_check_case(case: dict) -> tuple[bool, str]:
     # We got the response from claude
-    result = analyze_with_claude(f"JD: {case['jd']}")
+    result = analyze(f"JD: {case['jd']}")
 
     # From response, we extracted score, gaps and bullets
     score = result["match_score"]
