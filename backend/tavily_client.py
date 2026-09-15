@@ -14,8 +14,6 @@ def get_web_search_result(query: str):
         search_depth="advanced",
         include_answer=True
     )
-
-    print(f"Response: {response["answer"]}")
     return response["answer"]
 
 if __name__ == "__main__":

@@ -3,12 +3,9 @@ from mcp.client.stdio import stdio_client
 import asyncio
 import json
 from datetime import datetime
-import os
+from pathlib import Path
 
-LOGS_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "logs"
-)
+LOGS_DIR = str(Path(__file__).resolve().parent.parent / "logs")
 
 server_params = StdioServerParameters(
     command="npx",
@@ -31,7 +28,7 @@ async def log_application(jd: str, assessment: dict) -> str:
 if __name__ == "__main__":
     asyncio.run(log_application(
         jd="We are seeking a Senior Android Developer with over 5 years of experience to build high-performance mobile applications using Kotlin and Jetpack Compose. You will architect robust client-side frameworks and integrate advanced artificial intelligence capabilities, including on-device machine learning models and cloud-based LLM APIs. In this role, you will also leverage AI-assisted development workflows to accelerate feature delivery while ensuring optimal application performance.",
-        assessment="""
+        assessment=json.loads("""
         {
   "match_score": 62,
   "strengths": [
@@ -57,5 +54,5 @@ if __name__ == "__main__":
     "Managed full feature delivery lifecycle: requirement analysis, UI/UX implementation, API integration, testing, and documentation"
   ],
   "verdict": "Moderate fit at best. Jimmy is a solid, experienced Android engineer — no question there. But this JD is explicitly AI-heavy: on-device ML, LLM API integration, and AI-assisted workflows are core expectations, not bonuses. His resume shows zero AI or ML exposure. If the team needs someone to hit the ground running on AI feature integration, Jimmy isn't that person right now. Could work if the org is willing to ramp him up on the AI side, but don't hire him expecting AI expertise on day one."
-}"""
+}""")
     ))

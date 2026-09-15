@@ -1,7 +1,14 @@
 from backend.claude_client import analyze_with_claude
-from scripts.dataset import CASES
+from backend.qdrant_client_db import query_chunks
+from scripts.dataset import CASES, RAG_CASES
 from backend.judge import judge_response
 import time
+
+def rag_relevance_eval(case: dict) -> tuple[bool, str]:
+    chunks = query_chunks(case['query'], 5)
+    ok = case["expect"].lower() in chunks.lower()
+    res = f"query={case['query']}  expect={case['expect']}  -> {'found' if ok else 'MISSING'}"
+    return ok, res
 
 def eval_check_tools(case: dict) -> tuple[bool, str]:
     tool_used = []
@@ -69,5 +76,19 @@ def run_evals():
         time.sleep(25)   # stay under Voyage 3 RPM between cases
     print(f"\npassed: {passed}/{len(CASES)}")
 
+def run_rag_relevance_eval():
+    passed = 0
+    for case in RAG_CASES:
+        # ok, msg = eval_check_case(case)
+        # ok, msg = llm_as_judge_check_case(case)
+        ok, msg = rag_relevance_eval(case)
+        status = "PASS" if ok else "FAIL"
+        print(f"[{status}] {case['query']:30s} | {msg}")
+        if ok:
+            passed += 1
+
+        time.sleep(25)   # stay under Voyage 3 RPM between cases
+    print(f"\npassed: {passed}/{len(RAG_CASES)}")
+
 if __name__ == "__main__":
-    run_evals()
+    run_rag_relevance_eval()

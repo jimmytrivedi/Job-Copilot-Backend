@@ -20,3 +20,9 @@ CASES = [
         "expected_gap_terms": ["Python", "backend"]
     }
 ]
+
+RAG_CASES = [
+    {"query": "Kotlin Jetpack Compose Android", "expect": "Compose"},
+    {"query": "performance optimization memory", "expect": "performance"},
+    {"query": "version control git", "expect": "Git"},
+]

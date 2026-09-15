@@ -6,6 +6,8 @@ from backend.rag import insert_vectors, retrieve_closest_chunks
 
 load_dotenv()
 
+from langsmith import traceable
+
 # Create a client
 client = QdrantClient(
     url=os.environ.get("QDRANT_DB_URL"),
@@ -23,6 +25,7 @@ def init_dqrant():
         insert_vectors(client)
 
 # Retrieve vectors into a collection
+@traceable()
 def query_chunks(query: str, top_k: int = 5) :
     return retrieve_closest_chunks(client, query, top_k)
 

@@ -1,14 +1,12 @@
 from qdrant_client import QdrantClient
 from backend.voyage_client import get_embeddings_by_chunks, embed_query, rerank
 from qdrant_client.models import PointStruct, Document
-import os
+from pathlib import Path
 
 def get_resume():
     # Reading corpus/resume.md
-    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    with open(os.path.join(base, "corpus/resume.md"), "r") as f:
-        text = f.read()
-    return text
+    path = Path(__file__).resolve().parent.parent / "corpus" / "resume.md"
+    return path.read_text()
 
 # Insert vectors into a collection
 def insert_vectors(client: QdrantClient):
@@ -27,7 +25,7 @@ def retrieve_closest_chunks(client: QdrantClient, query: str, top_k: int = 5):
     query_vector = embed_query(query)
     results = client.query_points(
         collection_name="resume",
-        query=query_vector,
+        query=query_vector,  # type: ignore[arg-type]
         with_payload=True,
         limit=20
     )

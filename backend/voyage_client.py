@@ -28,7 +28,7 @@ def get_embeddings_by_chunks(text: str, chunk_size: int, chunk_overlap: int, inp
     return list(zip(chunks, result.embeddings))
 
 # A Query is a single string - No need to chunk it, if it exceeds 100 chars, this splits into pices and throw away everything except first chunks.
-def embed_query(text: str) -> list[float]:
+def embed_query(text: str) -> list[float | int]:
     for attempt in range(5):
         try:
             result = client.embed(texts=[text], model="voyage-4-large", input_type="query")
@@ -37,6 +37,7 @@ def embed_query(text: str) -> list[float]:
             if attempt == 4:
                 raise
             time.sleep(25)  # 3 RPM free tier needs ~20s spacing between calls
+    raise RuntimeError("embed_query_failed")
 
 def rerank(query: str, documents: list[str], top_k: int = 5) -> list[str]:
     result = client.rerank(

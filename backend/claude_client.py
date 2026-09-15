@@ -9,14 +9,27 @@ from backend.qdrant_client_db import query_chunks
 from backend.tools import search_resume, extract_requirements, run_extract_requirements, search_web, run_search_web
 from dotenv import load_dotenv
 import time
+from anthropic.types import TextBlockParam, MessageParam
 
-# Test git
 
 load_dotenv() # Reads the .env file and loads its variable into os.environ
+
+from langsmith import traceable
+
+
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-def analyze_with_claude(prompt: str) -> Assessment:
-   messages = [{"role": "user", "content": prompt}]
+SYSTEM_BLOCKS: list[TextBlockParam]=[
+    {
+        "type": "text",
+        "text": SYSTEM_PROMPT,
+        "cache_control": {"type": "ephemeral"}
+    }
+]
+
+@traceable()
+def analyze_with_claude(prompt: str):
+   messages: list[MessageParam] = [{"role": "user", "content": prompt}]
    start = time.perf_counter()
    trace = {"iteration": 0, "tools": [], "input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 0}
    try:
@@ -29,20 +42,14 @@ def analyze_with_claude(prompt: str) -> Assessment:
                max_tokens=1024,
                tools=[search_resume(), extract_requirements(), search_web()],
                output_format=Assessment,
-               system=[
-                   {
-                       "type": "text",
-                       "text": SYSTEM_PROMPT,
-                       "cache_control": {"type": "ephemeral"}
-                   }
-               ],
+               system=SYSTEM_BLOCKS ,
                messages=messages,
            )
 
            usage = response.usage
            trace["input_tokens"] += usage.input_tokens
            trace["output_tokens"] += usage.output_tokens
-           trace["cache_read_input_tokens"] += usage.cache_read_input_tokens
+           trace["cache_read_input_tokens"] += usage.cache_read_input_tokens or 0
 
            # Response
            if response.stop_reason != "tool_use":
@@ -83,7 +90,7 @@ def analyze_with_claude(prompt: str) -> Assessment:
 
    yield f'data:{{"stage": "done", "result": {response.parsed_output.model_dump_json()}}}\n\n'
 
-
+@traceable()
 def run_tool(name, tool_input):
     if name == "search_resume":
         return query_chunks(tool_input["query"], tool_input.get("top_k", 5))

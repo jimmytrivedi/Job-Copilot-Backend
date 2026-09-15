@@ -290,17 +290,26 @@ Note: hit Voyage 3 RPM during multi-case runs; raised embed_query backoff to 25s
 
 
 
-# Checkpoint 19 — RAG evaluation
-Measure retrieval itself: were the returned resume chunks actually relevant/grounded? Separate from final-answer eval.
+# Checkpoint 19 — RAG evaluation (relevance)
+Grade retrieval directly, not the final answer.
+RAG_CASES = list of (query, expected keyword). rag_relevance_eval calls query_chunks and asserts the keyword is in the returned chunks.
+Bypasses Claude/agent loop, so it tests retrieval alone. Result: passed 3/3.
 
 
----------------------------------------------------------P E N D I N G--------------------------------------------------
-# Checkpoint 20 — Observability (LangSmith/OTel)
-Trace every request end-to-end on a dashboard with cost/latency. Turns your prints into real monitoring.
+
+# Checkpoint 20 — Observability (LangSmith)
+Send traces to a dashboard instead of only terminal prints.
+1. uv add langsmith; set LANGSMITH_TRACING=true, LANGSMITH_API_KEY, LANGSMITH_PROJECT in .env (project auto-creates on first trace).
+2. Added @traceable on analyze_with_claude (decorate run_tool/query_chunks later for nested spans).
+Result: each /analyze request shows up in the LangSmith dashboard with inputs, output, latency.
+
+
 
 # Checkpoint 21 — Agentic RAG
 Let Claude retrieve, reason, then retrieve again with a refined query. You partly do this via multiple search_resume calls already.
 
+
+---------------------------------------------------------P E N D I N G--------------------------------------------------
 # Checkpoint 22 — LangGraph
 Rebuild your agent loop as a state graph with checkpointing + human-in-the-loop pauses. Replaces your hand-rolled for loop in analyze_with_claude.
 

@@ -3,6 +3,7 @@ import json
 import os
 from anthropic import Anthropic
 from backend.tavily_client import get_web_search_result
+from anthropic.types import MessageParam
 
 _client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
@@ -58,10 +59,11 @@ Shape:
 JD:
 {jd}
 """
+    messages: list[MessageParam] = [{"role": "user", "content": prompt}]
     response = _client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=512,
-        messages=[{"role": "user", "content": prompt}],
+        messages=messages,
     )
     text = response.content[0].text
     return json.loads(text)
