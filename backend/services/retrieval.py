@@ -1,14 +1,14 @@
 from backend.adapters.voyage_embedder import embed_query, rerank, embed_documents
 from backend.adapters.qdrant_store import client
 from qdrant_client.models import PointStruct
-from pathlib import Path
-from backend.config import settings
+from backend.config import settings, PROJECT_ROOT
 from qdrant_client.models import Distance, VectorParams
 from langsmith import traceable
 
 def get_resume():
     # Reading corpus/resume.md
-    path = Path(__file__).resolve().parent.parent.parent / "corpus" / "resume.md"
+    path = PROJECT_ROOT / "corpus" / "resume.md"
+
     return path.read_text()
 
 # Insert vectors into a collection

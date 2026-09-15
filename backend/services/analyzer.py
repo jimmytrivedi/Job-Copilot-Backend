@@ -5,12 +5,13 @@ from backend.llm.prompts import SYSTEM_PROMPT
 from backend.llm.tool_specs import search_resume, extract_requirements, search_web
 from backend.services.tool_runner import run_tool
 from backend.config import settings
+from backend.adapters.anthropic_llm import client
 import time
 from anthropic.types import TextBlockParam, MessageParam
 from langsmith import traceable
+import logging
 
-
-client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+logger = logging.getLogger(__name__)
 
 SYSTEM_BLOCKS: list[TextBlockParam]=[
     {
@@ -54,7 +55,7 @@ def analyze_with_claude(prompt: str):
            for block in response.content:
                if block.type == "tool_use":
                    trace["tools"].append(block.name)
-                   print(f"Tool called: {block.name} | input: {block.input}\n")
+                   logger.info("Tool called: %s | input: %s", block.name, block.input)
                    result = run_tool(block.name, block.input) #Dispatcher
                    yield {"stage": "tool", "name": block.name}
                    tool_results.append(
@@ -70,12 +71,13 @@ def analyze_with_claude(prompt: str):
        else:
            raise AgentLoopExceeded()
    except anthropic.BadRequestError as e:
-       print(f"Claude API error: {e}")
+       logger.exception("Claude API error")
        raise
 
    end = time.perf_counter()
    elapsed = end - start
-   print(f"Request time is {elapsed} seconds")
-   print(f"trace {trace}")
+
+   logger.info("Request completed in %.2fs", elapsed)
+   logger.info("Trace: %s", trace)
 
    yield {"stage": "done", "result": response.parsed_output.model_dump()}
