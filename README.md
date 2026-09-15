@@ -98,7 +98,7 @@ Go to pyproject.toml and delete these 2 blocks from the bottom, because we'll ru
 
 ```toml
 [project.scripts]
-jobsearch = "jobsearch:main"
+jobcopilot = "jobcopilot:main"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]

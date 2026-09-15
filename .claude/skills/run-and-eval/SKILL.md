@@ -1,9 +1,9 @@
 ---
 name: run-and-eval
-description: Run the JobSearch server, ingest the resume into Qdrant, run unit tests, or run the eval suites. Use when asked to start the app, hit the analyze endpoint, re-ingest the corpus, or check whether a prompt/tool change regressed quality.
+description: Run the Job Copilot server, ingest the resume into Qdrant, run unit tests, or run the eval suites. Use when asked to start the app, hit the analyze endpoint, re-ingest the corpus, or check whether a prompt/tool change regressed quality.
 ---
 
-# Running JobSearch
+# Running Job Copilot
 
 Everything runs through `uv`. Never `pip install` or activate a venv manually.
 
@@ -95,6 +95,6 @@ The `__main__` block at the bottom picks `run_rag_relevance_eval()` or `run_eval
 ## Docker
 
 ```bash
-docker build -t jobsearch .
-docker run -p 8000:8000 --env-file .env -e PORT=8000 jobsearch
+docker build -t jobcopilot .
+docker run -p 8000:8000 --env-file .env -e PORT=8000 jobcopilot
 ```

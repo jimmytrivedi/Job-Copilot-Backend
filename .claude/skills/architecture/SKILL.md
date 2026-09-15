@@ -3,7 +3,7 @@ name: architecture
 description: Layering rules for this codebase — which layer a new function, class, or file belongs in, and which imports are allowed. Use when adding a file, deciding where code goes, reviewing a change for layer violations, or when the user asks "where should this live?".
 ---
 
-# JobSearch architecture
+# Job Copilot architecture
 
 Layered Python service. Dependencies point **one way only**:
 
