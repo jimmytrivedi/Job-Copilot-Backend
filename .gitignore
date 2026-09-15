@@ -12,3 +12,6 @@ wheels/
 .env
 
 logs
+
+# macOS
+.DS_Store
