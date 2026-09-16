@@ -1,10 +1,11 @@
 import anthropic
+from backend.config import settings
 from backend.domain.models import Assessment
 from backend.domain.errors import AgentLoopExceeded
 from backend.llm.prompts import SYSTEM_PROMPT
 from backend.llm.tool_specs import search_resume, extract_requirements, search_web
 from backend.services.tool_runner import run_tool
-from backend.config import settings
+from backend.services.evaluation import rate_chunks
 from backend.adapters.anthropic_llm import client
 import time
 from anthropic.types import TextBlockParam, MessageParam
@@ -61,10 +62,18 @@ def analyze_with_claude(prompt: str):
 
            for block in response.content:
                if block.type == "tool_use":
-                   trace["tools"].append(block.name)
-                   logger.info("Tool called: %s | input: %s", block.name, block.input)
-                   result = run_tool(block.name, block.input) #Dispatcher
-                   yield {"stage": "tool", "name": block.name}
+                   name = block.name
+                   input = block.input
+
+                   trace["tools"].append(name)
+                   logger.info("Tool called: %s | input: %s", name, input)
+                   result = run_tool(name, input) #Dispatcher
+                   yield {"stage": "tool", "name": name}
+
+                   if name == "search_resume":
+                       res = rate_chunks(query=input['query'], chunks=result)
+                       yield {"stage": "reflection", "sufficient": res}
+
                    tool_results.append(
                        {
                            "type": "tool_result",

@@ -1,4 +1,4 @@
-# Job Copilot
+# Job Copilot [uv run uvicorn main:app --reload]
 
 Analyzes a job description against my resume using Claude, RAG over Qdrant, and tool calling.
 Built checkpoint by checkpoint — the journal below is the actual build log.
@@ -425,11 +425,7 @@ Send traces to a dashboard instead of only terminal prints.
 
 Result: each `/analyze` request shows up in the LangSmith dashboard with inputs, output, latency.
 
-## Checkpoint 21 — Agentic RAG
-
-Let Claude retrieve, reason, then retrieve again with a refined query. You partly do this via multiple `search_resume` calls already.
-
-## Checkpoint 22 — Layered architecture
+## Checkpoint 21 — Layered architecture
 
 **Why:** `backend/` had grown into 13 flat files named after vendors (`voyage_client.py`, `qdrant_client_db.py`). `load_dotenv()` was called in 5 places, three files each built their own Anthropic client, `qdrant_client_db.py` and `rag.py` imported each other, and the SSE `"data: ...\n\n"` string was being built inside the agent loop. Nothing was testable without network + API keys.
 
@@ -448,6 +444,22 @@ Steps:
 Verified end to end after the move: auth, both tools, Qdrant retrieval, prompt caching (3646 cached tokens), clean SSE frames.
 
 Skipped on purpose: `Protocol` ports for the adapters. Only one implementation of each, so it would be indirection with no payoff.
+
+## Checkpoint 22 — Agentic RAG
+
+**Why:** Claude already fired multiple `search_resume` calls, but it decided the count up front from the JD — it never judged whether a result was actually good before searching again. That's blind multi-query, not reflection.
+
+Done in two parts:
+
+**1. Prompt-only reflection (lightest).** Added a step to the `SYSTEM_PROMPT` workflow: after a `search_resume` result, evaluate whether the chunks confirm/deny the requirement — refine and search again only if they were insufficient, otherwise move on. Turns "search twice because there are two topics" into "search again because the first result was weak."
+
+**2. Explicit reflection in code.** The prompt hides the judgment inside Claude's reasoning; this makes it measurable.
+- New `rate_chunks(query, chunks)` in `services/evaluation.py` — a separate Claude call (same shape as `judge_response`) that returns `{"sufficient": <bool>, "score": <float>}`, driven by `RATE_CHUNK_PROMPT` in `llm/prompts.py`.
+- Wired into the agent loop in `analyzer.py`: after each `search_resume`, it calls `rate_chunks` and yields a `{"stage": "reflection", "sufficient": ...}` SSE event — emitted *after* the matching `tool` event so the stream reads tool → its reflection.
+
+Verified live: the stream now shows a `reflection` event per search, and `sufficient` genuinely discriminates (a broad MVVM/CI-CD/testing search came back `false`, matching the gaps in the final assessment).
+
+Stopped short on purpose: the reflection is **observed but not acted on** — the loop emits `sufficient` but doesn't yet branch on `false`. Making the loop react (force a refined re-search) is the natural next step.
 
 ---
 

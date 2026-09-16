@@ -16,6 +16,7 @@ class Settings:
 
     chat_model = "claude-sonnet-4-6"  # List of Model ID: https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions
     judge_model = "claude-opus-4-6"
+    judge_model_opus_4_7 = "claude-opus-4-7"
     embed_model = "voyage-4-large"
     rerank_model = "rerank-2.5"
     collection_name = "resume"
