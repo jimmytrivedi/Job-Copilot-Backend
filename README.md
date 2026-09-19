@@ -1,8 +1,10 @@
-# Job Copilot [uv run uvicorn main:app --reload]
+# Job Copilot
 
 Analyzes a job description against my resume using Claude, RAG over Qdrant, and tool calling.
 Built checkpoint by checkpoint — the journal below is the actual build log.
 
+Local Server
+uv run uvicorn main:app --reload
 ---
 
 ## Architecture
@@ -461,13 +463,38 @@ Verified live: the stream now shows a `reflection` event per search, and `suffic
 
 Stopped short on purpose: the reflection is **observed but not acted on** — the loop emits `sufficient` but doesn't yet branch on `false`. Making the loop react (force a refined re-search) is the natural next step.
 
+## Checkpoint 23 — LangGraph
+
+**Why:** the agent was a hand-rolled `for` loop in `analyze_with_claude` — call model, check `stop_reason`, run tools, append messages, repeat. Rebuilding it as an explicit **state graph** makes the nodes/edges visible and unlocks state persistence, checkpointing, and (later) human-in-the-loop pauses.
+
+Built the graph in a **new file** (`services/graph.py`), leaving the old loop untouched and working — swap only once the graph reaches parity.
+
+The loop maps to a graph of two real nodes plus a cycle:
+
+```
+START → model ──tool?──yes──▶ tools ──▶ model   (back-edge = the agent cycle)
+                 │
+                 no
+                 ▼
+              format → END
+```
+
+Steps:
+
+1. **State** — used the prebuilt `MessagesState` (a `messages` field with the `add_messages` append reducer baked in), then subclassed it to `State(MessagesState)` adding an `assessment` field to hold the final result. `State` lives in `graph.py`, not `domain/` — it extends a LangGraph type, so putting it in `domain/` would break the "domain imports only pydantic" rule.
+2. **Model** — `ChatAnthropic` (idiomatic path) in `adapters/anthropic_llm.py`. Two configured views of the one model: `model.bind_tools(tools)` for the loop, `model.with_structured_output(Assessment)` for the final answer.
+3. **Tools** — the 3 existing tools re-expressed as LangChain `@tool` functions (docstring → description, type hints → schema), reusing the existing executors (`query_chunks`, `run_extract_requirements`, `run_search_web`). Ran by the prebuilt `ToolNode` — replaces the hand-written dispatcher loop.
+4. **Nodes/edges** — `call_model` (prepends `SystemMessage(SYSTEM_PROMPT)` each turn), `ToolNode`, and a `format` node. Routing via prebuilt `tools_condition` with a path-map `{"tools": "tools", END: "format"}` — the `END → format` remap is what sends the "done" branch through the structured-output node instead of ending raw.
+5. **Structured output** — the `format` node calls `structured_model` to return a validated `Assessment`. It appends a `HumanMessage` first, because that node runs *after* the agent's final assistant message, and Anthropic requires the conversation to end on a user turn (no assistant prefill).
+
+Verified: `app.invoke({"messages": [...]})` runs model → tools → model → format → END and returns a validated `Assessment` object (not parsed text). Also tidied imports project-wide into grouped blocks.
+
+Not yet ported from the old loop (next): reflection (`rate_chunks`), SSE streaming events, the token/latency trace, prompt caching, and wiring the graph into an API route. Judging (`judge_response`) stays in the offline evals — not part of the live path.
+
+
 ---
 
 ## P E N D I N G
-
-## Checkpoint 23 — LangGraph
-
-Rebuild the agent loop as a state graph with checkpointing + human-in-the-loop pauses. Replaces the hand-rolled for loop in `analyze_with_claude`.
 
 ## Checkpoint 24 — Agent orchestration / Multi-agent
 

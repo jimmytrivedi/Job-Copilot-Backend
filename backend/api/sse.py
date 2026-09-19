@@ -1,6 +1,6 @@
 import json
-from typing import Iterator
 from backend.domain.errors import AgentLoopExceeded
+from typing import Iterator
 
 def to_sse(events: Iterator[dict]) -> Iterator[str]:
     try:

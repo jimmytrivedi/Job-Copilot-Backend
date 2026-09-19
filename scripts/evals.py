@@ -1,8 +1,10 @@
+import time
+
 from backend.services.analyzer import analyze, analyze_with_claude
 from backend.services.retrieval import query_chunks
-from scripts.dataset import CASES, RAG_CASES
 from backend.services.evaluation import judge_response
-import time
+
+from scripts.dataset import CASES, RAG_CASES
 
 def rag_relevance_eval(case: dict) -> tuple[bool, str]:
     chunks = query_chunks(case['query'], 5)

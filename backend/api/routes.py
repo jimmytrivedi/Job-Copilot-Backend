@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
 from backend.domain.models import AnalyzeRequest
 from backend.services.analyzer import analyze_with_claude
+
 from backend.api.deps import require_api_key
 from backend.api.sse import to_sse
+
+from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 
 router = APIRouter()
 

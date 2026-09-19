@@ -1,8 +1,11 @@
+from backend.config import settings, PROJECT_ROOT
+
 from backend.adapters.voyage_embedder import embed_query, rerank, embed_documents
 from backend.adapters.qdrant_store import client
+
 from qdrant_client.models import PointStruct
-from backend.config import settings, PROJECT_ROOT
 from qdrant_client.models import Distance, VectorParams
+
 from langsmith import traceable
 
 def get_resume():

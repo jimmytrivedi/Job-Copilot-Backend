@@ -1,6 +1,6 @@
 import voyageai
-from backend.config import settings
 import time
+from backend.config import settings
 
 client = voyageai.Client(api_key=settings.voyage_api_key)
 

@@ -1,5 +1,5 @@
-from tavily import TavilyClient
 from backend.config import settings
+from tavily import TavilyClient
 
 client = TavilyClient(
     api_key=settings.tavily_api_key

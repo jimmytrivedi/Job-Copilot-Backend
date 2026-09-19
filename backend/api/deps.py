@@ -1,6 +1,7 @@
+from backend.config import settings
+
 from fastapi import Security, HTTPException, status
 from fastapi.security import APIKeyHeader
-from backend.config import settings
 
 API_KEY = settings.api_key
 

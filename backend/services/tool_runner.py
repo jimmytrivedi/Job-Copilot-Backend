@@ -1,10 +1,14 @@
 import json
+
 from backend.config import settings
+
 from backend.adapters.tavily_search import get_web_search_result
 from backend.adapters.anthropic_llm import client
+
 from backend.services.retrieval import query_chunks
-from anthropic.types import MessageParam
 from backend.llm.prompts import EXTRACT_REQUIREMENTS_PROMPT
+
+from anthropic.types import MessageParam
 from langsmith import traceable
 
 def run_extract_requirements(jd: str) -> dict:

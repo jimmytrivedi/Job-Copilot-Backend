@@ -1,5 +1,6 @@
-from qdrant_client import QdrantClient
 from backend.config import settings
+from qdrant_client import QdrantClient
+
 
 # Create a client
 client = QdrantClient(
