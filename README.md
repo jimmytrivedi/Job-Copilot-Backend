@@ -465,33 +465,18 @@ Stopped short on purpose: the reflection is **observed but not acted on** — th
 
 ## Checkpoint 23 — LangGraph
 
-**Why:** the agent was a hand-rolled `for` loop in `analyze_with_claude` — call model, check `stop_reason`, run tools, append messages, repeat. Rebuilding it as an explicit **state graph** makes the nodes/edges visible and unlocks state persistence, checkpointing, and (later) human-in-the-loop pauses.
+Rebuilt the hand-rolled agent loop as an explicit LangGraph state graph in `services/graph.py` (kept the old `analyze_with_claude` intact). Graph: `START → model → (tools_condition) → run_tools → model` cycle, ending `model → format → END`. `State(MessagesState)` adds an `assessment` field. Then ported the old loop's features one by one:
 
-Built the graph in a **new file** (`services/graph.py`), leaving the old loop untouched and working — swap only once the graph reaches parity.
+- **System prompt** — `call_model` prepends a `SystemMessage(SYSTEM_PROMPT)` each turn.
+- **Structured output** — a `format` node calls `model.with_structured_output(Assessment)`; it appends a `HumanMessage` first, because Anthropic rejects assistant-prefill (the turn must end on a user message).
+- **Reflection** — `search_resume_tool` self-rates its chunks via `rate_chunks` and logs the verdict (observed, not acted on — same as before).
+- **SSE streaming** — `analyze_graph_stream` consumes `app.stream(stream_mode="updates")` and yields `{"stage": "tool"/"done"}` dicts; exposed at `POST /analyze/graph/stream` via `to_sse`.
+- **Trace / instrumentation** — accumulates tool names + token counts from each `model` chunk's `usage_metadata`, logs elapsed time.
+- **Prompt caching** — tagged the last system block **and** the last tool with `cache_control` (what `AnthropicPromptCachingMiddleware` does), verified correct on the wire.
 
-The loop maps to a graph of two real nodes plus a cycle:
+**Caching finding:** it does not actually cache at this prompt size, and that's expected. Debugged it down to prefix size — the raw client caches fine with the *old* `tool_specs` (~1527-token prefix, `input_examples` make them fat) but not with the lean LangChain `@tool` versions (~1086-token prefix). The tags are correct and will activate automatically once the prefix grows; the old code cached almost incidentally because of its verbose tool definitions. Confirmed it's not a LangChain issue — the raw Anthropic client won't cache the lean prefix either.
 
-```
-START → model ──tool?──yes──▶ tools ──▶ model   (back-edge = the agent cycle)
-                 │
-                 no
-                 ▼
-              format → END
-```
-
-Steps:
-
-1. **State** — used the prebuilt `MessagesState` (a `messages` field with the `add_messages` append reducer baked in), then subclassed it to `State(MessagesState)` adding an `assessment` field to hold the final result. `State` lives in `graph.py`, not `domain/` — it extends a LangGraph type, so putting it in `domain/` would break the "domain imports only pydantic" rule.
-2. **Model** — `ChatAnthropic` (idiomatic path) in `adapters/anthropic_llm.py`. Two configured views of the one model: `model.bind_tools(tools)` for the loop, `model.with_structured_output(Assessment)` for the final answer.
-3. **Tools** — the 3 existing tools re-expressed as LangChain `@tool` functions (docstring → description, type hints → schema), reusing the existing executors (`query_chunks`, `run_extract_requirements`, `run_search_web`). Ran by the prebuilt `ToolNode` — replaces the hand-written dispatcher loop.
-4. **Nodes/edges** — `call_model` (prepends `SystemMessage(SYSTEM_PROMPT)` each turn), `ToolNode`, and a `format` node. Routing via prebuilt `tools_condition` with a path-map `{"tools": "tools", END: "format"}` — the `END → format` remap is what sends the "done" branch through the structured-output node instead of ending raw.
-5. **Structured output** — the `format` node calls `structured_model` to return a validated `Assessment`. It appends a `HumanMessage` first, because that node runs *after* the agent's final assistant message, and Anthropic requires the conversation to end on a user turn (no assistant prefill).
-
-Verified: `app.invoke({"messages": [...]})` runs model → tools → model → format → END and returns a validated `Assessment` object (not parsed text). Also tidied imports project-wide into grouped blocks.
-
-Not yet ported from the old loop (next): reflection (`rate_chunks`), SSE streaming events, the token/latency trace, prompt caching, and wiring the graph into an API route. Judging (`judge_response`) stays in the offline evals — not part of the live path.
-
-
+Not ported (stays offline): `judge_response` LLM-as-judge lives in `scripts/evals.py`, not the live path.
 ---
 
 ## P E N D I N G

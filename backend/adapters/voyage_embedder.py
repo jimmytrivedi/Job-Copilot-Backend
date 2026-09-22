@@ -9,7 +9,7 @@ def embed_query(text: str) -> list[float | int]:
     for attempt in range(5):
         try:
             result = client.embed(texts=[text], model=settings.embed_model, input_type=settings.input_type_query)
-            return  result.embeddings[0]
+            return result.embeddings[0]
         except voyageai.error.RateLimitError:
             if attempt == 4:
                 raise
