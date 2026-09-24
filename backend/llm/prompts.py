@@ -83,3 +83,26 @@ Return raw json only. No markdown, no prose.
 "score": <float>
 }}
 """
+
+SUPERVISOR_PROMPT = """You're a supervisor whose job is to manage 3 specialists to assess a candidate against a JD.
+
+requirement_extractor: This specialist helps you to parse a JD
+matcher: This specialist helps you to check the JD against resume and return the score
+bullet_writer: This specialist helps you to write the tailored bullets.
+
+Each specialist runs exactly once, in order: requirement_extractor → matcher → bullet_writer. Look at which have already produced output (by their name).
+Once all three have run, return FINISH. Never call the same specialist twice.
+Do NOT call any specialist more than twice.
+
+You need to pick the next specialist to run based on what's already been done in the conversation.
+Look at which have already produced output (by their name).
+return FINISH once all three specialist have run and the assessment is complete
+"""
+
+MATCHER_PROMPT = """You have a requirement and resume chunks. You need to evaluate this and assess the fit.
+Produce a match score, strengths, and gaps, grounded only in the chunks (no inventing).
+"""
+
+BULLET_WRITER_PROMPT = """You have a query which contains expectation against JD and you have a resume chunks.
+Produce a bullet points which are not exist in resume.
+"""

@@ -479,11 +479,17 @@ Rebuilt the hand-rolled agent loop as an explicit LangGraph state graph in `serv
 Not ported (stays offline): `judge_response` LLM-as-judge lives in `scripts/evals.py`, not the live path.
 ---
 
-## P E N D I N G
-
 ## Checkpoint 24 — Agent orchestration / Multi-agent
 
-Split into specialist agents (requirement-extractor, matcher, bullet-writer) coordinated by a supervisor. Cleaner than one mega-prompt.
+Built a dynamic supervisor in `services/supervisor.py` (kept the single-agent graph intact).
+
+- 3 specialist agents: `requirement_extractor` (parse JD), `matcher` (score fit vs resume), `bullet_writer` (tailored bullets) — each a focused LLM call, not a tool.
+- Supervisor is an LLM that returns a `Route` (Literal of the 3 agents + FINISH); a conditional edge routes on `state["next"]`, each specialist loops back to the supervisor.
+- Termination: agents append their name to a `completed` list in state (via `operator.add` reducer); the supervisor sees that list in its prompt and returns FINISH once all have run — no recursion guard or code short-circuit needed.
+- Verified: runs each specialist once, then stops on its own (natural FINISH).
+
+
+## P E N D I N G
 
 ## Checkpoint 25 — Agent security
 
