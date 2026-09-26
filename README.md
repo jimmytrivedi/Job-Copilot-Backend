@@ -488,13 +488,4 @@ Built a dynamic supervisor in `services/supervisor.py` (kept the single-agent gr
 - Termination: agents append their name to a `completed` list in state (via `operator.add` reducer); the supervisor sees that list in its prompt and returns FINISH once all have run — no recursion guard or code short-circuit needed.
 - Verified: runs each specialist once, then stops on its own (natural FINISH).
 
-
-## P E N D I N G
-
-## Checkpoint 25 — Agent security
-
-Guard against JD text injecting instructions, validate tool args, least-privilege on the MCP file writes. `/analyze` takes untrusted input.
-
-## Checkpoint 26 — Cloud deploy + CI
-
-GitHub Actions runs the evals on every push, blocks merge if pass-rate drops, auto-deploys to Railway/Bedrock.
+-------------------------------------------------------- PROJECT END ---------------------------------------------------
