@@ -1,5 +1,10 @@
 import json
 import operator
+import time
+import logging
+
+from pydantic import BaseModel
+from typing import Literal, Annotated
 
 from backend.adapters.anthropic_llm import model
 from backend.llm.prompts import SUPERVISOR_PROMPT, MATCHER_PROMPT, BULLET_WRITER_PROMPT
@@ -7,11 +12,11 @@ from backend.llm.prompts import SUPERVISOR_PROMPT, MATCHER_PROMPT, BULLET_WRITER
 from backend.services.tool_runner import run_extract_requirements
 from backend.services.retrieval import query_chunks
 
-from pydantic import BaseModel
-from typing import Literal, Annotated
-
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
+
+
+logger = logging.getLogger(__name__)
 
 AGENTS = ["requirement_extractor", "matcher", "bullet_writer"]
 
@@ -57,9 +62,12 @@ def matcher(state: State):
     return {"messages": [response], "completed": ["matcher"]}
 
 def bullet_writer(state: State):
-    expectation = state["messages"][0].content
-    chunks = query_chunks(expectation)
-    response = model.invoke([SystemMessage(content=BULLET_WRITER_PROMPT), HumanMessage(content=chunks)])
+    jd = state["messages"][0].content
+    chunks = query_chunks(jd)
+    response = model.invoke([
+        SystemMessage(content=BULLET_WRITER_PROMPT),
+        HumanMessage(content=f"JD:\n{jd}\n\nResume chunks:\n{chunks}"),
+    ])
     return {"messages": [response], "completed": ["bullet_writer"]}
 
 
@@ -84,5 +92,27 @@ graph.add_conditional_edges(
         "FINISH": END,
     },
 )
+
+def analyze_supervisor_stream(query: str):
+    trace = {"tools": [], "input_tokens": 0, "output_tokens": 0, "cache_read": 0}
+    start = time.perf_counter()
+    inp = {'messages': [{'role': 'user', 'content': query}]}
+    result = None
+
+    for chunk in app.stream(
+        input=inp,
+        stream_mode="updates"
+    ):
+        for node, update in chunk.items():
+            if node in ("requirement_extractor", "matcher", "bullet_writer"):
+                yield {"stage": "agent", "name":node}
+                result = update["messages"][-1].content
+    yield {"stage": "done", "result": result}
+
+    end = time.perf_counter()
+    elapsed = end - start
+
+    logger.info(f"elapsed {elapsed}")
+    logger.info(f"Trace: {trace}")
 
 app = graph.compile()
